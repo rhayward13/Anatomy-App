@@ -8,8 +8,8 @@ const SEGMENTS = {
   bowmans: { label: "Bowman's Capsule", kind: 'tubular', station: 'filtration' },
   pct: { label: 'Proximal Convoluted Tubule', kind: 'tubular', station: 'pct' },
   loop: { label: 'Loop of Henle', kind: 'tubular', station: 'loop' },
-  dct: { label: 'Distal Convoluted Tubule', kind: 'tubular' },
-  collecting: { label: 'Collecting Duct', kind: 'tubular' },
+  dct: { label: 'Distal Convoluted Tubule', kind: 'tubular', station: 'distal' },
+  collecting: { label: 'Collecting Duct', kind: 'tubular', station: 'distal' },
 };
 
 const AMBER = '#F59E0B';
@@ -326,7 +326,300 @@ const STATION_CONTENT = {
       </>
     ),
   },
+
+  distal: {
+    title: 'Distal Tubule + Collecting Duct',
+    subtitle: 'Regulated reabsorption · pH balance · final output',
+    plain:
+      'Fine-tuning. Hormones decide how much Na⁺, K⁺, Ca²⁺, and water to keep. pH balance happens here. Past the papilla = officially urine.',
+    details: (
+      <>
+        <div className="space-y-2">
+          <div className="text-xs uppercase tracking-wider text-slate-400">
+            Filtrate flow
+          </div>
+          <FlowRow
+            from="18 L/day (entering DCT)"
+            to="1.5 L/day · 50–1200 mOsm"
+          />
+          <div className="text-xs text-slate-400 italic">
+            Osmolarity range is wide because water reabsorption is hormonally
+            controlled (ADH, Ch. 20).
+          </div>
+        </div>
+
+        <div>
+          <div className="text-xs uppercase tracking-wider text-slate-400 mb-2">
+            K⁺ handling — diet-dependent
+          </div>
+          <div className="space-y-1.5">
+            {[
+              { diet: 'Low K⁺', value: '2% excreted', note: 'conserve', color: BLUE },
+              { diet: 'Normal K⁺', value: '10–20% excreted', note: 'balance', color: BLUE },
+              { diet: 'High K⁺', value: 'up to 150% excreted', note: 'net secretion', color: AMBER },
+            ].map((row, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-2 rounded-md border border-navy-700 bg-navy-900 px-3 py-2 text-xs"
+              >
+                <span className="w-20 text-slate-400 shrink-0">{row.diet}</span>
+                <span className="font-semibold" style={{ color: row.color }}>
+                  {row.value}
+                </span>
+                <span className="ml-auto text-[10px] text-slate-500 italic">
+                  {row.note}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2">
+          <div className="rounded-lg border border-navy-700 bg-navy-900 p-3">
+            <Pill>DCT</Pill>
+            <div className="text-xs text-slate-300 mt-1.5">
+              Reabsorbs <span className="text-white font-medium">Na⁺, Cl⁻, Ca²⁺</span>{' '}
+              (regulated) · secretes{' '}
+              <span className="text-white font-medium">K⁺ and H⁺</span> (pH balance)
+            </div>
+          </div>
+          <div className="rounded-lg border border-navy-700 bg-navy-900 p-3">
+            <Pill>Collecting duct</Pill>
+            <div className="text-xs text-slate-300 mt-1.5">
+              Reabsorbs <span className="text-white font-medium">Na⁺, Cl⁻, urea</span>.
+              K⁺ reabsorbed OR secreted depending on diet.
+            </div>
+          </div>
+        </div>
+
+        <Callout title="When does filtrate become urine?">
+          The moment it passes the{' '}
+          <span className="font-semibold" style={{ color: AMBER }}>
+            papilla
+          </span>{' '}
+          at the bottom of the medullary pyramid. Beyond that point it's URINE,
+          not filtrate.
+        </Callout>
+      </>
+    ),
+  },
+
+  micturition: {
+    title: 'Micturition',
+    subtitle: 'The urination reflex',
+    plain:
+      'Urine flows into the bladder. When it fills, stretch receptors trigger a reflex. Higher CNS can override — that\'s why you can "hold it."',
+    details: (
+      <>
+        <div>
+          <div className="text-xs uppercase tracking-wider text-slate-400 mb-2">
+            At rest (bladder filling)
+          </div>
+          <ul className="space-y-1.5">
+            {[
+              { label: 'Detrusor', value: 'Relaxed' },
+              { label: 'Internal sphincter (smooth)', value: 'Passively contracted' },
+              { label: 'External sphincter (skeletal)', value: 'Contracted — tonic motor neuron firing' },
+            ].map((row, i) => (
+              <li
+                key={i}
+                className="rounded-md border border-navy-700 bg-navy-900 px-3 py-2 text-xs flex items-center gap-2"
+              >
+                <span className="text-slate-400 shrink-0 min-w-0">{row.label}</span>
+                <span className="ml-auto text-white text-right">{row.value}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <div className="text-xs uppercase tracking-wider text-slate-400 mb-2">
+            Micturition reflex
+          </div>
+          <ol className="space-y-1.5">
+            {[
+              'Stretch receptors fire as bladder fills',
+              'Sensory neuron → spinal cord',
+              'Parasympathetic fires; external-sphincter motor neuron inhibited',
+              'Detrusor contracts; internal sphincter passively opens; external sphincter relaxes',
+              'Urine flows',
+            ].map((step, i) => (
+              <li key={i} className="flex items-start gap-2 text-xs text-slate-300">
+                <span
+                  className="mt-0.5 inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold shrink-0"
+                  style={{ backgroundColor: `${BLUE}33`, color: BLUE }}
+                >
+                  {i + 1}
+                </span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <Callout title="Voluntary control">
+          Higher CNS input can facilitate or inhibit the reflex — that's how you
+          consciously delay urination or initiate it.
+        </Callout>
+      </>
+    ),
+  },
 };
+
+function KidneyOverview({ onOpenMicturition }) {
+  const funcs = [
+    { icon: '💧', label: 'Volume regulation' },
+    { icon: '❤️', label: 'Blood pressure' },
+    { icon: '⚖️', label: 'Osmolarity regulation' },
+    { icon: '⚡', label: 'Ion balance' },
+    { icon: '🚫', label: 'Waste removal' },
+    { icon: '📊', label: 'Endocrine' },
+  ];
+  return (
+    <div className="space-y-4">
+      <div>
+        <h3 className="text-xs uppercase tracking-widest text-slate-400 mb-2">
+          Kidney Overview
+        </h3>
+        <p className="text-sm text-slate-300 leading-relaxed">
+          Start by clicking a nephron segment — or read the big picture first.
+        </p>
+      </div>
+
+      <div>
+        <div className="text-xs uppercase tracking-wider text-slate-400 mb-2">
+          6 Functions
+        </div>
+        <div className="grid grid-cols-2 gap-1.5">
+          {funcs.map((f, i) => (
+            <div
+              key={i}
+              className="rounded-md border border-navy-700 bg-navy-900 px-2.5 py-1.5 text-xs flex items-center gap-2"
+            >
+              <span aria-hidden>{f.icon}</span>
+              <span className="text-slate-200">{f.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <Callout title="Endocrine — professor's callout">
+        <ul className="space-y-1 text-xs">
+          <li>
+            <span className="font-semibold" style={{ color: AMBER }}>EPO</span> —{' '}
+            cytokine, <em>not</em> a hormone
+          </li>
+          <li>
+            <span className="font-semibold" style={{ color: AMBER }}>Renin</span> —{' '}
+            enzyme, <em>not</em> a hormone
+          </li>
+          <li>
+            <span className="font-semibold" style={{ color: AMBER }}>1,25-dihydroxyvitamin D</span> —{' '}
+            promotes phosphate/calcium absorption
+          </li>
+        </ul>
+      </Callout>
+
+      <div className="rounded-lg border border-navy-700 bg-navy-900 p-3">
+        <div className="text-xs uppercase tracking-wider text-slate-400 mb-1.5">
+          Path of urine
+        </div>
+        <div className="text-xs text-slate-200 leading-relaxed">
+          Nephron → renal pelvis → ureter → bladder → urethra
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-2">
+        <div className="rounded-lg border border-navy-700 bg-navy-900 p-3">
+          <Pill>Cortex</Pill>
+          <div className="text-xs text-slate-300 mt-1.5">
+            Bowman's capsules · PCT · DCT
+          </div>
+        </div>
+        <div className="rounded-lg border border-navy-700 bg-navy-900 p-3">
+          <Pill color={AMBER}>Medulla</Pill>
+          <div className="text-xs text-slate-300 mt-1.5">
+            Loops of Henle · collecting ducts
+          </div>
+        </div>
+      </div>
+
+      <button
+        onClick={onOpenMicturition}
+        className="w-full text-left text-xs text-slate-400 hover:text-white underline underline-offset-2"
+      >
+        Or jump to micturition →
+      </button>
+    </div>
+  );
+}
+
+function FormulaBar() {
+  const formulas = [
+    {
+      label: 'Excretion',
+      body: (
+        <>
+          <span style={{ color: AMBER }}>Filtration</span> −{' '}
+          <span style={{ color: BLUE }}>Reabsorption</span> +{' '}
+          <span style={{ color: AMBER }}>Secretion</span>
+        </>
+      ),
+    },
+    {
+      label: 'Net filtration pressure',
+      body: (
+        <>
+          55 − 30 − 15 ={' '}
+          <span style={{ color: AMBER }} className="font-bold">10 mmHg</span>
+        </>
+      ),
+    },
+    {
+      label: 'Clearance of X',
+      body: (
+        <>
+          <span style={{ color: BLUE }}>excretion rate (mg/min)</span> ÷{' '}
+          <span style={{ color: BLUE }}>[X]<sub>plasma</sub> (mg/mL)</span>
+        </>
+      ),
+    },
+  ];
+
+  return (
+    <div
+      role="region"
+      aria-label="Master formulas"
+      className="fixed bottom-0 left-0 right-0 z-30 border-t border-navy-800 bg-navy-950/95 backdrop-blur"
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5">
+        <div className="flex items-center gap-2 overflow-x-auto panel-scroll">
+          <span
+            className="text-[10px] font-bold uppercase tracking-widest shrink-0 hidden sm:inline"
+            style={{ color: AMBER }}
+          >
+            Formulas
+          </span>
+          <div className="flex items-stretch gap-2 flex-1">
+            {formulas.map((f, i) => (
+              <div
+                key={i}
+                className="flex-1 min-w-[240px] rounded-md border border-navy-800 bg-navy-900 px-3 py-1.5"
+              >
+                <div className="text-[10px] uppercase tracking-wider text-slate-400">
+                  {f.label}
+                </div>
+                <div className="text-xs sm:text-sm font-mono text-slate-100 truncate">
+                  {f.body}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function Segment({ id, active, onSelect, children }) {
   return (
@@ -574,10 +867,23 @@ export default function App() {
   const [mode, setMode] = useState('learn');
   const [active, setActive] = useState(null);
 
-  const activeLabel = active ? SEGMENTS[active].label : null;
+  const seg = active ? SEGMENTS[active] : null;
+  const stationKey = seg?.station || (active && !seg ? active : null);
+  const content = stationKey ? STATION_CONTENT[stationKey] : null;
+  const headerTitle = content ? content.title : seg?.label;
+  const headerSubtitle = content
+    ? content.subtitle
+    : seg
+    ? seg.kind === 'vascular'
+      ? 'Vascular side'
+      : 'Tubular side'
+    : null;
+
+  // Only the nephron SVG uses segment IDs; micturition is a pseudo-station.
+  const svgActive = seg ? active : null;
 
   return (
-    <div className="min-h-full bg-navy-950 text-slate-100">
+    <div className="min-h-full bg-navy-950 text-slate-100 pb-24">
       {/* Top nav */}
       <header className="border-b border-navy-800 bg-navy-900/80 backdrop-blur sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
@@ -643,7 +949,7 @@ export default function App() {
                   Click a segment to inspect
                 </p>
               </div>
-              <NephronDiagram active={active} onSelect={setActive} />
+              <NephronDiagram active={svgActive} onSelect={setActive} />
               <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-slate-400">
                 <span className="inline-flex items-center gap-2">
                   <span className="w-4 h-1.5 rounded-full bg-electric" />
@@ -658,52 +964,58 @@ export default function App() {
                   Cortex / medulla boundary
                 </span>
               </div>
+
+              <button
+                onClick={() => setActive('micturition')}
+                className={`mt-4 w-full flex items-center justify-between gap-3 rounded-lg px-4 py-3 text-sm font-medium transition ${
+                  active === 'micturition'
+                    ? 'text-navy-950'
+                    : 'text-slate-200 hover:bg-navy-800'
+                }`}
+                style={
+                  active === 'micturition'
+                    ? { backgroundColor: AMBER }
+                    : { border: `1px solid ${AMBER}66`, backgroundColor: `${AMBER}10` }
+                }
+              >
+                <span className="flex items-center gap-2">
+                  <span aria-hidden>🚽</span>
+                  Micturition — the urination reflex
+                </span>
+                <span aria-hidden>→</span>
+              </button>
             </section>
 
             {/* Side panel */}
-            <aside className="rounded-xl border border-navy-800 bg-navy-900 p-5 h-fit lg:sticky lg:top-20">
-              <h3 className="text-xs uppercase tracking-widest text-slate-400 mb-2">
-                Station
-              </h3>
-              {activeLabel ? (
+            <aside className="rounded-xl border border-navy-800 bg-navy-900 p-5 h-fit lg:sticky lg:top-20 max-h-[calc(100vh-10rem)] overflow-y-auto panel-scroll">
+              {active ? (
                 <>
-                  {(() => {
-                    const stationKey = SEGMENTS[active].station;
-                    const content = stationKey ? STATION_CONTENT[stationKey] : null;
-                    return (
-                      <>
-                        <p className="text-xl font-semibold mb-0.5">
-                          {content ? content.title : activeLabel}
-                        </p>
-                        <p className="text-xs text-slate-400 mb-4">
-                          {content
-                            ? content.subtitle
-                            : SEGMENTS[active].kind === 'vascular'
-                            ? 'Vascular side'
-                            : 'Tubular side'}
-                        </p>
-                        {content ? (
-                          <>
-                            <div
-                              className="rounded-lg p-4 text-sm leading-relaxed"
-                              style={{
-                                border: `1px solid ${BLUE}66`,
-                                backgroundColor: `${BLUE}14`,
-                                color: '#E5EEFB',
-                              }}
-                            >
-                              {content.plain}
-                            </div>
-                            <GoDeeper>{content.details}</GoDeeper>
-                          </>
-                        ) : (
-                          <div className="rounded-lg border border-navy-700 bg-navy-800/60 p-4 text-sm text-slate-300">
-                            Station info coming soon.
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
+                  <h3 className="text-xs uppercase tracking-widest text-slate-400 mb-2">
+                    Station
+                  </h3>
+                  <p className="text-xl font-semibold mb-0.5">{headerTitle}</p>
+                  {headerSubtitle && (
+                    <p className="text-xs text-slate-400 mb-4">{headerSubtitle}</p>
+                  )}
+                  {content ? (
+                    <>
+                      <div
+                        className="rounded-lg p-4 text-sm leading-relaxed"
+                        style={{
+                          border: `1px solid ${BLUE}66`,
+                          backgroundColor: `${BLUE}14`,
+                          color: '#E5EEFB',
+                        }}
+                      >
+                        {content.plain}
+                      </div>
+                      <GoDeeper>{content.details}</GoDeeper>
+                    </>
+                  ) : (
+                    <div className="rounded-lg border border-navy-700 bg-navy-800/60 p-4 text-sm text-slate-300">
+                      Station info coming soon.
+                    </div>
+                  )}
                   <button
                     onClick={() => setActive(null)}
                     className="mt-4 text-xs text-slate-400 hover:text-white underline underline-offset-2"
@@ -712,19 +1024,14 @@ export default function App() {
                   </button>
                 </>
               ) : (
-                <div className="text-sm text-slate-400">
-                  <p className="mb-2">
-                    Select a nephron segment from the diagram to begin.
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    Each segment will glow on hover.
-                  </p>
-                </div>
+                <KidneyOverview onOpenMicturition={() => setActive('micturition')} />
               )}
             </aside>
           </div>
         )}
       </main>
+
+      <FormulaBar />
     </div>
   );
 }
