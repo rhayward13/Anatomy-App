@@ -1010,6 +1010,422 @@ function GlucoseGraph() {
   );
 }
 
+const QUIZ = [
+  { q: 'What is the GFR?', a: '125 mL/min' },
+  { q: 'What is the filtration fraction?', a: '20%' },
+  {
+    q: 'Net filtration pressure = P_H(55) − π(?) − P_fluid(?) = ?',
+    a: '30 mmHg, 15 mmHg → 10 mmHg',
+  },
+  {
+    q: 'What are the 3 layers of the filtration barrier?',
+    a: 'Capillary endothelium, basal lamina, podocytes',
+  },
+  {
+    q: 'What do mesangial cells do?',
+    a: 'Contract/relax to alter filtration surface area',
+  },
+  {
+    q: 'What is isosmotic reabsorption?',
+    a: 'Volume decreases but osmolarity stays at 300 mOsm (PCT)',
+  },
+  {
+    q: 'What transporter reabsorbs glucose on the apical membrane of the PCT?',
+    a: 'SGLT',
+  },
+  { q: 'Constricting the afferent arteriole → GFR does what?', a: 'Decreases' },
+  { q: 'Constricting the efferent arteriole → GFR does what?', a: 'Increases' },
+  { q: 'GFR is autoregulated between what MAP values?', a: '80–180 mmHg' },
+  {
+    q: 'Name the 2 autoregulation mechanisms.',
+    a: 'Myogenic response, tubuloglomerular feedback',
+  },
+  {
+    q: 'What cells detect NaCl in tubuloglomerular feedback?',
+    a: 'Macula densa',
+  },
+  {
+    q: 'What do JG/granular cells secrete?',
+    a: 'Renin (enzyme, not hormone)',
+  },
+  {
+    q: 'What is the osmolarity at the end of the loop of Henle?',
+    a: '100 mOsm',
+  },
+  {
+    q: 'K⁺ excretion on a high-K⁺ diet can reach what % of filtered load?',
+    a: '150%',
+  },
+  {
+    q: 'Urea is secreted in which segment?',
+    a: 'Ascending limb of the loop of Henle',
+  },
+  {
+    q: 'PAH excretion = what % of filtered load?',
+    a: '500%',
+  },
+  {
+    q: 'Inulin clearance = ?',
+    a: 'GFR (125 mL/min) — neither reabsorbed nor secreted',
+  },
+  {
+    q: 'Glucose clearance = ?',
+    a: '0 mL/min (all reabsorbed)',
+  },
+  {
+    q: 'EPO is technically what type of molecule?',
+    a: 'Cytokine, not a hormone',
+  },
+];
+
+// Deterministic LCG shuffle so options are stable per question index.
+function seededShuffle(arr, seed) {
+  const a = [...arr];
+  let s = seed || 1;
+  for (let i = a.length - 1; i > 0; i--) {
+    s = (s * 9301 + 49297) % 233280;
+    const j = Math.floor((s / 233280) * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function getChoices(index) {
+  const correct = QUIZ[index].a;
+  const pool = QUIZ.map((x, i) => ({ text: x.a, i })).filter((x) => x.i !== index);
+  const distractors = seededShuffle(pool, index + 17).slice(0, 2).map((x) => x.text);
+  return seededShuffle([correct, ...distractors], index + 91);
+}
+
+function QuizView() {
+  const [index, setIndex] = useState(0);
+  const [answers, setAnswers] = useState({}); // { [i]: "chosen text" }
+
+  const total = QUIZ.length;
+  const current = QUIZ[index];
+  const choices = useMemo(() => getChoices(index), [index]);
+  const chosen = answers[index];
+  const answered = chosen !== undefined;
+  const correct = current.a;
+  const score = useMemo(
+    () =>
+      Object.entries(answers).filter(([i, c]) => c === QUIZ[Number(i)].a).length,
+    [answers]
+  );
+  const answeredCount = Object.keys(answers).length;
+
+  const choose = (text) => {
+    if (answered) return;
+    setAnswers((prev) => ({ ...prev, [index]: text }));
+  };
+
+  const reset = () => {
+    setAnswers({});
+    setIndex(0);
+  };
+
+  return (
+    <section className="rounded-xl border border-navy-800 bg-navy-900 p-4 sm:p-6">
+      {/* Header: progress + score */}
+      <div className="flex items-center justify-between gap-4 mb-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <h2 className="text-base font-semibold">Quiz</h2>
+          <span className="text-xs text-slate-400">
+            Question {index + 1} / {total}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div
+            className="rounded-md px-2.5 py-1 text-xs font-semibold"
+            style={{
+              backgroundColor: `${AMBER}22`,
+              color: AMBER,
+              border: `1px solid ${AMBER}66`,
+            }}
+          >
+            Score: {score} / {answeredCount}
+          </div>
+          <button
+            onClick={reset}
+            className="text-xs text-slate-400 hover:text-white underline underline-offset-2"
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+
+      {/* Progress dots */}
+      <div className="flex flex-wrap gap-1 mb-5">
+        {QUIZ.map((_, i) => {
+          const state = answers[i] === undefined
+            ? 'unanswered'
+            : answers[i] === QUIZ[i].a
+            ? 'correct'
+            : 'wrong';
+          const color =
+            state === 'correct' ? GREEN : state === 'wrong' ? '#EF4444' : '#334155';
+          const isCurrent = i === index;
+          return (
+            <button
+              key={i}
+              onClick={() => setIndex(i)}
+              aria-label={`Go to question ${i + 1}`}
+              className="w-3 h-3 rounded-full transition"
+              style={{
+                backgroundColor: color,
+                outline: isCurrent ? `2px solid ${BLUE}` : 'none',
+                outlineOffset: 2,
+              }}
+            />
+          );
+        })}
+      </div>
+
+      {/* Question card */}
+      <div
+        className="rounded-lg p-4 mb-4"
+        style={{
+          border: `1px solid ${BLUE}55`,
+          backgroundColor: `${BLUE}14`,
+        }}
+      >
+        <div className="text-[11px] uppercase tracking-widest mb-1.5" style={{ color: BLUE }}>
+          Question {index + 1}
+        </div>
+        <div className="text-base font-medium text-white leading-snug">
+          {current.q}
+        </div>
+      </div>
+
+      {/* Choices */}
+      <div className="space-y-2 mb-5">
+        {choices.map((choice, i) => {
+          const isCorrect = choice === correct;
+          const isChosen = chosen === choice;
+          const showCorrect = answered && isCorrect;
+          const showWrong = answered && isChosen && !isCorrect;
+
+          let ring = 'border-navy-700 bg-navy-800/60 hover:bg-navy-800';
+          let iconColor = '#475569';
+          let icon = String.fromCharCode(65 + i); // A, B, C
+          if (showCorrect) {
+            ring = '';
+            iconColor = GREEN;
+            icon = '✓';
+          } else if (showWrong) {
+            ring = '';
+            iconColor = '#EF4444';
+            icon = '✕';
+          } else if (answered) {
+            ring = 'border-navy-800 bg-navy-900 text-slate-500';
+          }
+
+          return (
+            <button
+              key={i}
+              onClick={() => choose(choice)}
+              disabled={answered}
+              className={`w-full text-left rounded-lg border px-3 py-2.5 text-sm transition flex items-start gap-3 ${ring}`}
+              style={
+                showCorrect
+                  ? { border: `2px solid ${GREEN}`, backgroundColor: `${GREEN}14` }
+                  : showWrong
+                  ? { border: `2px solid #EF4444`, backgroundColor: '#EF444414' }
+                  : undefined
+              }
+            >
+              <span
+                className="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-bold"
+                style={{
+                  backgroundColor: `${iconColor}22`,
+                  color: iconColor,
+                  border: `1px solid ${iconColor}66`,
+                }}
+              >
+                {icon}
+              </span>
+              <span className="text-slate-200 leading-snug">{choice}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Feedback */}
+      {answered && (
+        <div
+          className="rounded-lg p-3 mb-4 text-sm"
+          style={
+            chosen === correct
+              ? { border: `1px solid ${GREEN}66`, backgroundColor: `${GREEN}14`, color: '#d1fae5' }
+              : { border: `1px solid ${AMBER}`, backgroundColor: `${AMBER}14`, color: '#fef3c7' }
+          }
+        >
+          {chosen === correct ? (
+            <span>
+              <span className="font-semibold" style={{ color: GREEN }}>Correct.</span>{' '}
+              {correct}
+            </span>
+          ) : (
+            <span>
+              <span className="font-semibold" style={{ color: AMBER }}>Not quite.</span>{' '}
+              The answer is: <span className="text-white font-medium">{correct}</span>
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Nav */}
+      <div className="flex items-center justify-between gap-2">
+        <button
+          onClick={() => setIndex((i) => Math.max(0, i - 1))}
+          disabled={index === 0}
+          className="px-4 py-2 rounded-md text-sm font-medium border border-navy-700 bg-navy-800 hover:bg-navy-700 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          ← Previous
+        </button>
+        <button
+          onClick={() => setIndex((i) => Math.min(total - 1, i + 1))}
+          disabled={index === total - 1}
+          className="px-4 py-2 rounded-md text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+          style={
+            index < total - 1
+              ? { backgroundColor: BLUE, color: '#fff' }
+              : { backgroundColor: '#1c2850', color: '#cbd5e1' }
+          }
+        >
+          Next →
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function ClearanceCalculator() {
+  const [excretion, setExcretion] = useState('');
+  const [plasma, setPlasma] = useState('');
+
+  const presets = [
+    { name: 'Inulin',     ex: 125, pl: 1 },
+    { name: 'Glucose',    ex: 0,   pl: 1 },
+    { name: 'Urea',       ex: 50,  pl: 1 },
+    { name: 'Penicillin', ex: 150, pl: 1 },
+  ];
+
+  const eNum = parseFloat(excretion);
+  const pNum = parseFloat(plasma);
+  const valid = Number.isFinite(eNum) && Number.isFinite(pNum) && pNum > 0;
+  const clearance = valid ? eNum / pNum : null;
+
+  let verdict = null;
+  if (clearance !== null) {
+    if (Math.abs(clearance - 125) < 0.5) {
+      verdict = {
+        label: '= 125 mL/min → Neither reabsorbed nor secreted (like inulin)',
+        color: BLUE,
+      };
+    } else if (clearance < 125) {
+      verdict = { label: '< 125 mL/min → Net REABSORPTION', color: GREEN };
+    } else {
+      verdict = { label: '> 125 mL/min → Net SECRETION', color: AMBER };
+    }
+  }
+
+  return (
+    <section className="rounded-xl border border-navy-800 bg-navy-900 p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-4 mb-3 flex-wrap">
+        <h2 className="text-sm font-semibold">
+          <span aria-hidden className="mr-1.5">🧮</span>
+          Clearance Calculator
+        </h2>
+        <span className="text-[11px] text-slate-400 font-mono">
+          C<sub>X</sub> = excretion rate ÷ [X]<sub>plasma</sub>
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 items-end">
+        <label className="block">
+          <span className="text-[11px] text-slate-400 uppercase tracking-wider">
+            Excretion rate
+          </span>
+          <div className="relative">
+            <input
+              type="number"
+              inputMode="decimal"
+              value={excretion}
+              onChange={(e) => setExcretion(e.target.value)}
+              placeholder="0"
+              className="w-full rounded-md border border-navy-700 bg-navy-800 px-3 py-2 pr-14 text-sm text-white focus:outline-none focus:ring-2"
+              style={{ '--tw-ring-color': BLUE }}
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">
+              mg/min
+            </span>
+          </div>
+        </label>
+        <label className="block">
+          <span className="text-[11px] text-slate-400 uppercase tracking-wider">
+            [X] plasma
+          </span>
+          <div className="relative">
+            <input
+              type="number"
+              inputMode="decimal"
+              value={plasma}
+              onChange={(e) => setPlasma(e.target.value)}
+              placeholder="0"
+              className="w-full rounded-md border border-navy-700 bg-navy-800 px-3 py-2 pr-14 text-sm text-white focus:outline-none focus:ring-2"
+              style={{ '--tw-ring-color': BLUE }}
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">
+              mg/mL
+            </span>
+          </div>
+        </label>
+        <div className="rounded-md border border-navy-700 bg-navy-950 px-3 py-2 min-w-[140px] text-center">
+          <div className="text-[10px] uppercase tracking-wider text-slate-400">
+            Clearance
+          </div>
+          <div className="text-lg font-mono font-semibold text-white">
+            {clearance !== null ? `${Math.round(clearance * 10) / 10}` : '—'}
+            <span className="text-xs text-slate-400 ml-1">mL/min</span>
+          </div>
+        </div>
+      </div>
+
+      {verdict && (
+        <div
+          className="mt-3 rounded-md px-3 py-2 text-xs font-semibold"
+          style={{
+            backgroundColor: `${verdict.color}14`,
+            border: `1px solid ${verdict.color}66`,
+            color: verdict.color,
+          }}
+        >
+          {verdict.label}
+        </div>
+      )}
+
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        <span className="text-[10px] uppercase tracking-wider text-slate-400 mr-1 self-center">
+          Presets
+        </span>
+        {presets.map((p) => (
+          <button
+            key={p.name}
+            onClick={() => {
+              setExcretion(String(p.ex));
+              setPlasma(String(p.pl));
+            }}
+            className="rounded-full px-3 py-1 text-xs font-medium border border-navy-700 bg-navy-800 hover:bg-navy-700 hover:border-navy-600 text-slate-200"
+          >
+            {p.name} <span className="text-slate-500">({p.ex / p.pl})</span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function Segment({ id, active, onSelect, children }) {
   return (
     <g
@@ -1355,13 +1771,9 @@ export default function App() {
         </div>
       )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
         {mode === 'quiz' ? (
-          <div className="rounded-xl border border-amber-warm/40 bg-navy-900 p-8 text-center">
-            <div className="text-4xl mb-2" aria-hidden>📊</div>
-            <h2 className="text-xl font-semibold mb-1">Quiz Mode</h2>
-            <p className="text-slate-400">Coming soon — stations will light up one at a time with questions.</p>
-          </div>
+          <QuizView />
         ) : tab === 'solutes' ? (
           <SolutesTable />
         ) : tab === 'graph' ? (
@@ -1456,6 +1868,8 @@ export default function App() {
             </aside>
           </div>
         )}
+
+        <ClearanceCalculator />
       </main>
 
       <FormulaBar />
