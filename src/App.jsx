@@ -1,4 +1,17 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  ReferenceArea,
+  ReferenceLine,
+  ReferenceDot,
+} from 'recharts';
 
 const SEGMENTS = {
   afferent: { label: 'Afferent Arteriole', kind: 'vascular', station: 'filtration' },
@@ -621,6 +634,382 @@ function FormulaBar() {
   );
 }
 
+const GREEN = '#10B981';
+
+const SOLUTES = [
+  { solute: 'Na⁺',     pct: 'R',        loop: 'R',   distal: 'Regulated R', excretion: '~1%',        trap: false },
+  { solute: 'Cl⁻',     pct: 'R',        loop: 'R',   distal: 'R',           excretion: '~1%',        trap: false },
+  { solute: 'K⁺',      pct: 'R',        loop: 'R',   distal: 'R or S (diet)', excretion: '2–150%',   trap: false },
+  { solute: 'Ca²⁺',    pct: 'R',        loop: 'R',   distal: 'Regulated R', excretion: '~1%',        trap: false },
+  { solute: 'Glucose', pct: '100% R',   loop: '—',   distal: '—',           excretion: '0% normally',trap: false },
+  { solute: 'Urea',    pct: 'R',        loop: 'S',   distal: 'R',           excretion: '30–50%',     trap: true, trapCell: 'loop' },
+  { solute: 'PAH',     pct: 'S',        loop: '—',   distal: '—',           excretion: '500%',       trap: true, trapCell: 'pct' },
+];
+
+function SoluteCell({ value, highlight }) {
+  // Decide color from leading token
+  const isR = /^R\b|^100% R|^Regulated R|^R or/.test(value);
+  const isS = /^S\b|^R or S|or S/.test(value);
+  let color = null;
+  if (isR && !isS) color = GREEN;
+  else if (isS && !isR) color = BLUE;
+  else if (isR && isS) color = null;
+
+  return (
+    <td
+      className="px-3 py-2 text-xs align-middle"
+      style={
+        highlight
+          ? { border: `2px solid ${AMBER}`, backgroundColor: `${AMBER}1f`, borderRadius: 4 }
+          : undefined
+      }
+    >
+      {value === 'R' || value === 'S' ? (
+        <span
+          className="inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-bold"
+          style={{ backgroundColor: `${color}22`, color, border: `1px solid ${color}66` }}
+        >
+          {value}
+        </span>
+      ) : value === '—' ? (
+        <span className="text-slate-500">—</span>
+      ) : (
+        <span style={color ? { color } : undefined} className="font-medium">
+          {value}
+        </span>
+      )}
+    </td>
+  );
+}
+
+function SolutesTable() {
+  return (
+    <section className="rounded-xl border border-navy-800 bg-navy-900 p-4 sm:p-6">
+      <div className="flex items-start justify-between gap-4 mb-3 flex-wrap">
+        <div>
+          <h2 className="text-base font-semibold">Renal Handling of Key Solutes</h2>
+          <p className="text-xs text-slate-400 mt-0.5">
+            What each segment does with each solute, end-to-end.
+          </p>
+        </div>
+        <div
+          className="rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest"
+          style={{ backgroundColor: `${AMBER}22`, color: AMBER, border: `1px solid ${AMBER}` }}
+        >
+          Professor: KNOW THIS
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 mb-3 text-xs">
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold"
+            style={{ backgroundColor: `${GREEN}22`, color: GREEN, border: `1px solid ${GREEN}66` }}
+          >R</span>
+          <span className="text-slate-400">Reabsorbed</span>
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold"
+            style={{ backgroundColor: `${BLUE}22`, color: BLUE, border: `1px solid ${BLUE}66` }}
+          >S</span>
+          <span className="text-slate-400">Secreted</span>
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="inline-block w-5 h-5 rounded"
+            style={{ border: `2px solid ${AMBER}`, backgroundColor: `${AMBER}1f` }}
+          />
+          <span className="text-slate-400">Exam trap</span>
+        </span>
+      </div>
+
+      <div className="overflow-x-auto panel-scroll">
+        <table className="w-full border-separate" style={{ borderSpacing: 0 }}>
+          <thead>
+            <tr className="text-left">
+              <th className="px-3 py-2 text-[11px] uppercase tracking-wider text-slate-400 border-b border-navy-700">
+                Solute
+              </th>
+              <th className="px-3 py-2 text-[11px] uppercase tracking-wider text-slate-400 border-b border-navy-700">
+                PCT
+              </th>
+              <th className="px-3 py-2 text-[11px] uppercase tracking-wider text-slate-400 border-b border-navy-700">
+                Ascending Loop
+              </th>
+              <th className="px-3 py-2 text-[11px] uppercase tracking-wider text-slate-400 border-b border-navy-700">
+                Distal Nephron
+              </th>
+              <th className="px-3 py-2 text-[11px] uppercase tracking-wider text-slate-400 border-b border-navy-700">
+                Net Excretion
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {SOLUTES.map((row, i) => (
+              <tr
+                key={row.solute}
+                className={i % 2 === 0 ? 'bg-navy-900' : 'bg-navy-800/40'}
+              >
+                <td className="px-3 py-2 text-sm font-semibold text-white">
+                  {row.solute}
+                  {row.trap && (
+                    <span
+                      className="ml-2 text-[10px] font-bold uppercase tracking-wider align-middle"
+                      style={{ color: AMBER }}
+                    >
+                      ⚠
+                    </span>
+                  )}
+                </td>
+                <SoluteCell value={row.pct}    highlight={row.trap && row.trapCell === 'pct'} />
+                <SoluteCell value={row.loop}   highlight={row.trap && row.trapCell === 'loop'} />
+                <SoluteCell value={row.distal} />
+                <SoluteCell value={row.excretion} />
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <Callout title="Urea — the odd one out">
+          Urea is <span className="font-semibold" style={{ color: AMBER }}>secreted</span> into
+          the ascending limb (everywhere else it's reabsorbed).
+        </Callout>
+        <Callout title="PAH — net secretion">
+          Cleared at <span className="font-semibold" style={{ color: AMBER }}>500%</span> of GFR —
+          way more excreted than filtered. Classic example of net secretion.
+        </Callout>
+      </div>
+    </section>
+  );
+}
+
+function buildGlucoseData() {
+  const GFR_PER_100ML = 1.25; // 125 mL/min divided by 100 mL
+  const THRESHOLD = 300;
+  const TM = 375;
+  const data = [];
+  for (let x = 0; x <= 500; x += 10) {
+    const filtration = GFR_PER_100ML * x;
+    const reabsorption = x <= THRESHOLD ? filtration : TM;
+    const excretion = x <= THRESHOLD ? 0 : filtration - TM;
+    data.push({ x, filtration, reabsorption, excretion });
+  }
+  return data;
+}
+
+function GlucoseTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-md border border-navy-700 bg-navy-950/95 px-3 py-2 text-xs shadow-lg">
+      <div className="text-slate-400 mb-1">
+        Plasma glucose: <span className="text-white font-semibold">{label}</span> mg/100mL
+      </div>
+      {payload.map((p) => (
+        <div key={p.dataKey} className="flex items-center gap-2">
+          <span
+            className="inline-block w-2 h-2 rounded-full"
+            style={{ backgroundColor: p.color }}
+          />
+          <span className="text-slate-300 capitalize">{p.name}:</span>
+          <span className="text-white font-medium">
+            {Math.round(p.value)} mg/min
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function GlucoseGraph() {
+  const data = useMemo(() => buildGlucoseData(), []);
+  const RED = '#EF4444';
+  const THRESHOLD = 300;
+  const TM = 375;
+
+  return (
+    <section className="rounded-xl border border-navy-800 bg-navy-900 p-4 sm:p-6">
+      <div className="flex items-start justify-between gap-4 mb-3 flex-wrap">
+        <div>
+          <h2 className="text-base font-semibold">Glucose: Filtration, Reabsorption, Excretion</h2>
+          <p className="text-xs text-slate-400 mt-0.5">
+            How the 3 curves relate — and why glucose spills into urine above threshold.
+          </p>
+        </div>
+        <div
+          className="rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest"
+          style={{ backgroundColor: `${AMBER}22`, color: AMBER, border: `1px solid ${AMBER}` }}
+        >
+          Tm / renal threshold
+        </div>
+      </div>
+
+      <div className="w-full h-[420px] mt-2">
+        <ResponsiveContainer>
+          <LineChart
+            data={data}
+            margin={{ top: 16, right: 24, bottom: 36, left: 24 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#1c2850" />
+            <XAxis
+              dataKey="x"
+              type="number"
+              domain={[0, 500]}
+              ticks={[0, 70, 140, 200, 300, 400, 500]}
+              stroke="#94a3b8"
+              tick={{ fill: '#94a3b8', fontSize: 11 }}
+              label={{
+                value: 'Plasma glucose (mg/100mL)',
+                position: 'insideBottom',
+                offset: -18,
+                fill: '#cbd5e1',
+                fontSize: 12,
+              }}
+            />
+            <YAxis
+              domain={[0, 700]}
+              ticks={[0, 125, 250, 375, 500, 625]}
+              stroke="#94a3b8"
+              tick={{ fill: '#94a3b8', fontSize: 11 }}
+              label={{
+                value: 'Rate (mg/min)',
+                angle: -90,
+                position: 'insideLeft',
+                offset: 8,
+                fill: '#cbd5e1',
+                fontSize: 12,
+              }}
+            />
+
+            {/* Normal range shaded zone */}
+            <ReferenceArea
+              x1={70}
+              x2={140}
+              y1={0}
+              y2={700}
+              fill={GREEN}
+              fillOpacity={0.1}
+              stroke={GREEN}
+              strokeOpacity={0.35}
+              strokeDasharray="4 4"
+              label={{
+                value: 'Normal range',
+                position: 'insideTop',
+                fill: GREEN,
+                fontSize: 11,
+                offset: 8,
+              }}
+            />
+
+            {/* Renal threshold marker */}
+            <ReferenceLine
+              x={THRESHOLD}
+              stroke={AMBER}
+              strokeDasharray="6 4"
+              label={{
+                value: 'Renal threshold ≈ 300',
+                position: 'top',
+                fill: AMBER,
+                fontSize: 11,
+              }}
+            />
+
+            {/* Tm marker */}
+            <ReferenceLine
+              y={TM}
+              stroke={GREEN}
+              strokeDasharray="2 4"
+              strokeOpacity={0.6}
+              label={{
+                value: `Tm = ${TM} mg/min`,
+                position: 'right',
+                fill: GREEN,
+                fontSize: 11,
+              }}
+            />
+            <ReferenceDot
+              x={THRESHOLD}
+              y={TM}
+              r={4}
+              fill={AMBER}
+              stroke="#0a1020"
+              strokeWidth={2}
+            />
+
+            <Tooltip content={<GlucoseTooltip />} />
+            <Legend
+              verticalAlign="top"
+              height={28}
+              iconType="plainline"
+              wrapperStyle={{ color: '#cbd5e1', fontSize: 12 }}
+            />
+
+            <Line
+              type="linear"
+              dataKey="filtration"
+              name="Filtration"
+              stroke={RED}
+              strokeWidth={2.5}
+              dot={false}
+              isAnimationActive={false}
+            />
+            <Line
+              type="linear"
+              dataKey="reabsorption"
+              name="Reabsorption"
+              stroke={GREEN}
+              strokeWidth={2.5}
+              dot={false}
+              isAnimationActive={false}
+            />
+            <Line
+              type="linear"
+              dataKey="excretion"
+              name="Excretion"
+              stroke={BLUE}
+              strokeWidth={2.5}
+              dot={false}
+              isAnimationActive={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div className="rounded-lg border border-navy-700 bg-navy-900 p-3 text-xs">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-3 h-0.5" style={{ backgroundColor: RED }} />
+            <span className="font-semibold" style={{ color: RED }}>Filtration</span>
+          </div>
+          <div className="text-slate-300">
+            Linear, never saturates — purely pressure-driven.
+          </div>
+        </div>
+        <div className="rounded-lg border border-navy-700 bg-navy-900 p-3 text-xs">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-3 h-0.5" style={{ backgroundColor: GREEN }} />
+            <span className="font-semibold" style={{ color: GREEN }}>Reabsorption</span>
+          </div>
+          <div className="text-slate-300">
+            Transporters saturate at <span className="text-white font-medium">Tm ≈ 375 mg/min</span>.
+          </div>
+        </div>
+        <div className="rounded-lg border border-navy-700 bg-navy-900 p-3 text-xs">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-3 h-0.5" style={{ backgroundColor: BLUE }} />
+            <span className="font-semibold" style={{ color: BLUE }}>Excretion</span>
+          </div>
+          <div className="text-slate-300">
+            Zero until plasma exceeds renal threshold, then linear — this is glucosuria.
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Segment({ id, active, onSelect, children }) {
   return (
     <g
@@ -865,6 +1254,7 @@ function NephronDiagram({ active, onSelect }) {
 
 export default function App() {
   const [mode, setMode] = useState('learn');
+  const [tab, setTab] = useState('nephron');
   const [active, setActive] = useState(null);
 
   const seg = active ? SEGMENTS[active] : null;
@@ -932,6 +1322,39 @@ export default function App() {
         </div>
       </header>
 
+      {mode === 'learn' && (
+        <div className="border-b border-navy-800 bg-navy-950/80 sticky top-[56px] sm:top-[65px] z-10 backdrop-blur">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <nav role="tablist" aria-label="Learn views" className="flex gap-1 sm:gap-2 overflow-x-auto panel-scroll">
+              {[
+                { id: 'nephron', label: 'Nephron' },
+                { id: 'solutes', label: 'Solutes Table' },
+                { id: 'graph',   label: 'Glucose Graph' },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  role="tab"
+                  aria-selected={tab === t.id}
+                  onClick={() => setTab(t.id)}
+                  className={`px-3 sm:px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition ${
+                    tab === t.id
+                      ? 'text-white'
+                      : 'text-slate-400 hover:text-slate-200 border-transparent'
+                  }`}
+                  style={
+                    tab === t.id
+                      ? { borderColor: BLUE, color: '#fff' }
+                      : undefined
+                  }
+                >
+                  {t.label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </div>
+      )}
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {mode === 'quiz' ? (
           <div className="rounded-xl border border-amber-warm/40 bg-navy-900 p-8 text-center">
@@ -939,6 +1362,10 @@ export default function App() {
             <h2 className="text-xl font-semibold mb-1">Quiz Mode</h2>
             <p className="text-slate-400">Coming soon — stations will light up one at a time with questions.</p>
           </div>
+        ) : tab === 'solutes' ? (
+          <SolutesTable />
+        ) : tab === 'graph' ? (
+          <GlucoseGraph />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
             {/* Diagram */}
