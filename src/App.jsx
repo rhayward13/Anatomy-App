@@ -1,15 +1,331 @@
 import { useState } from 'react';
 
 const SEGMENTS = {
-  afferent: { label: 'Afferent Arteriole', kind: 'vascular' },
-  glomerulus: { label: 'Glomerulus', kind: 'vascular' },
+  afferent: { label: 'Afferent Arteriole', kind: 'vascular', station: 'filtration' },
+  glomerulus: { label: 'Glomerulus', kind: 'vascular', station: 'filtration' },
   efferent: { label: 'Efferent Arteriole', kind: 'vascular' },
   peritubular: { label: 'Peritubular Capillaries', kind: 'vascular' },
-  bowmans: { label: "Bowman's Capsule", kind: 'tubular' },
-  pct: { label: 'Proximal Convoluted Tubule', kind: 'tubular' },
-  loop: { label: 'Loop of Henle', kind: 'tubular' },
+  bowmans: { label: "Bowman's Capsule", kind: 'tubular', station: 'filtration' },
+  pct: { label: 'Proximal Convoluted Tubule', kind: 'tubular', station: 'pct' },
+  loop: { label: 'Loop of Henle', kind: 'tubular', station: 'loop' },
   dct: { label: 'Distal Convoluted Tubule', kind: 'tubular' },
   collecting: { label: 'Collecting Duct', kind: 'tubular' },
+};
+
+const AMBER = '#F59E0B';
+const BLUE = '#3B82F6';
+
+function Pill({ children, color = BLUE }) {
+  return (
+    <span
+      className="inline-block px-2 py-0.5 rounded-md text-xs font-semibold"
+      style={{ backgroundColor: `${color}22`, color, border: `1px solid ${color}55` }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function Callout({ children, title }) {
+  return (
+    <div
+      className="rounded-lg p-3 text-sm"
+      style={{ border: `1px solid ${AMBER}`, backgroundColor: `${AMBER}14` }}
+    >
+      {title && (
+        <div
+          className="text-xs font-bold uppercase tracking-wider mb-1"
+          style={{ color: AMBER }}
+        >
+          {title}
+        </div>
+      )}
+      <div className="text-slate-200">{children}</div>
+    </div>
+  );
+}
+
+function FlowRow({ from, to }) {
+  return (
+    <div className="flex items-center gap-2 text-xs text-slate-300">
+      <span className="px-2 py-1 rounded bg-navy-800 border border-navy-700 whitespace-nowrap">
+        {from}
+      </span>
+      <span style={{ color: BLUE }}>→</span>
+      <span className="px-2 py-1 rounded bg-navy-800 border border-navy-700 whitespace-nowrap">
+        {to}
+      </span>
+    </div>
+  );
+}
+
+function GoDeeper({ children }) {
+  return (
+    <details className="mt-4 group rounded-lg border border-navy-700 bg-navy-800/40">
+      <summary
+        className="px-4 py-2.5 text-sm font-semibold flex items-center justify-between"
+        style={{ color: BLUE }}
+      >
+        <span>Go Deeper</span>
+        <span
+          className="transition-transform group-open:rotate-90 text-slate-400"
+          aria-hidden
+        >
+          ▸
+        </span>
+      </summary>
+      <div className="px-4 pb-4 pt-1 space-y-4 text-sm text-slate-300">
+        {children}
+      </div>
+    </details>
+  );
+}
+
+const STATION_CONTENT = {
+  filtration: {
+    title: 'Filtration',
+    subtitle: 'Afferent arteriole → Glomerulus → Bowman’s capsule',
+    plain:
+      'Blood is forced through a filter under high pressure. 20% of plasma becomes protein-free filtrate.',
+    details: (
+      <>
+        <Callout title="Net filtration pressure">
+          <div className="font-mono text-base text-white">
+            P<sub>H</sub>(55) − π(30) − P<sub>fluid</sub>(15) ={' '}
+            <span style={{ color: AMBER }} className="font-bold">
+              10 mmHg
+            </span>
+          </div>
+          <div className="text-xs text-slate-300 mt-1">
+            Blood pressure promotes filtration; colloid osmotic pressure and
+            Bowman’s capsule fluid pressure oppose it.
+          </div>
+        </Callout>
+
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-lg border border-navy-700 bg-navy-900 p-3">
+            <div className="text-xs text-slate-400">GFR</div>
+            <div className="text-base font-semibold" style={{ color: BLUE }}>
+              125 mL/min
+            </div>
+            <div className="text-xs text-slate-400">= 180 L/day</div>
+          </div>
+          <div className="rounded-lg border border-navy-700 bg-navy-900 p-3">
+            <div className="text-xs text-slate-400">Filtration fraction</div>
+            <div className="text-base font-semibold" style={{ color: BLUE }}>
+              20%
+            </div>
+            <div className="text-xs text-slate-400">of plasma entering</div>
+          </div>
+        </div>
+
+        <div>
+          <div className="text-xs uppercase tracking-wider text-slate-400 mb-2">
+            Filtration barrier (3 layers)
+          </div>
+          <ol className="space-y-1.5">
+            {[
+              'Capillary endothelium (pores)',
+              'Basal lamina (fused basement membrane)',
+              'Podocyte foot processes (filtration slits)',
+            ].map((item, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <span
+                  className="mt-0.5 inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold shrink-0"
+                  style={{ backgroundColor: `${BLUE}33`, color: BLUE }}
+                >
+                  {i + 1}
+                </span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <div className="rounded-lg border border-navy-700 bg-navy-900 p-3 space-y-2">
+          <div>
+            <Pill color={AMBER}>Mesangial cells</Pill>
+            <span className="ml-2 text-slate-300">
+              contract/relax to alter surface area and blood flow (change GFR).
+            </span>
+          </div>
+          <div className="pt-2 border-t border-navy-700 text-xs space-y-1">
+            <div>
+              <span className="text-slate-400">Visceral layer =</span>{' '}
+              <span className="text-white font-medium">podocytes</span>
+            </div>
+            <div>
+              <span className="text-slate-400">Parietal layer =</span>{' '}
+              <span className="text-white font-medium">capsular epithelium</span>
+            </div>
+          </div>
+        </div>
+      </>
+    ),
+  },
+
+  pct: {
+    title: 'Proximal Convoluted Tubule',
+    subtitle: 'Reabsorption + Secretion',
+    plain:
+      'The workhorse. Reclaims 70% of everything — glucose, amino acids, Na+, water. Isosmotic: volume drops but concentration stays at 300 mOsm.',
+    details: (
+      <>
+        <div className="space-y-2">
+          <div className="text-xs uppercase tracking-wider text-slate-400">
+            Filtrate flow
+          </div>
+          <FlowRow
+            from="180 L/day · 100% · 300 mOsm"
+            to="54 L/day · 30% · 300 mOsm"
+          />
+          <div className="text-xs text-slate-400 italic">
+            Isosmotic reabsorption — water follows solutes proportionally.
+          </div>
+        </div>
+
+        <div>
+          <div className="text-xs uppercase tracking-wider text-slate-400 mb-2">
+            4 Reabsorption mechanisms
+          </div>
+          <ul className="space-y-2">
+            {[
+              {
+                tag: 'Primary active',
+                icon: '⚡',
+                text: 'ENaC (apical) + Na⁺/K⁺-ATPase (basolateral) — the engine driving everything else.',
+              },
+              {
+                tag: 'Secondary active',
+                icon: '🔄',
+                text: 'SGLT (apical) co-transports glucose with Na⁺; GLUT (basolateral) releases glucose to blood.',
+              },
+              {
+                tag: 'Passive',
+                icon: '💧',
+                text: 'Urea follows water osmotically as filtrate concentrates.',
+              },
+              {
+                tag: 'Endocytosis',
+                icon: '📊',
+                text: 'Small peptides → receptor-mediated endocytosis → lysosomes → amino acids returned to blood.',
+              },
+            ].map((m, i) => (
+              <li
+                key={i}
+                className="rounded-lg border border-navy-700 bg-navy-900 p-2.5 flex gap-2.5"
+              >
+                <span className="text-lg leading-none mt-0.5" aria-hidden>
+                  {m.icon}
+                </span>
+                <div className="min-w-0">
+                  <Pill>{m.tag}</Pill>
+                  <div className="text-slate-300 mt-1 text-xs">{m.text}</div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <Callout title="Secretion">
+          <span className="text-slate-200">
+            Tertiary active transport of organic anions via the{' '}
+            <span className="font-semibold" style={{ color: AMBER }}>
+              OAT
+            </span>{' '}
+            pathway. Penicillin and PAH are secreted here — classic exam
+            examples.
+          </span>
+        </Callout>
+
+        <div className="rounded-lg border border-navy-700 bg-navy-900 p-3">
+          <div className="text-xs uppercase tracking-wider text-slate-400 mb-1.5">
+            Peritubular capillaries — Starling forces
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="rounded bg-navy-800 p-2">
+              <div className="text-slate-400">P<sub>H</sub></div>
+              <div className="font-semibold text-red-300">10 mmHg</div>
+              <div className="text-[10px] text-slate-500">opposes</div>
+            </div>
+            <div className="rounded bg-navy-800 p-2">
+              <div className="text-slate-400">π</div>
+              <div className="font-semibold" style={{ color: BLUE }}>
+                30 mmHg
+              </div>
+              <div className="text-[10px] text-slate-500">promotes</div>
+            </div>
+            <div
+              className="rounded p-2"
+              style={{ backgroundColor: `${AMBER}1a`, border: `1px solid ${AMBER}55` }}
+            >
+              <div className="text-slate-400">Net</div>
+              <div className="font-semibold" style={{ color: AMBER }}>
+                20 mmHg
+              </div>
+              <div className="text-[10px] text-slate-500">reabsorb</div>
+            </div>
+          </div>
+        </div>
+      </>
+    ),
+  },
+
+  loop: {
+    title: 'Loop of Henle',
+    subtitle: 'Sets up the medullary concentration gradient',
+    plain:
+      'Descending limb loses water. Ascending limb pumps out ions but NOT water — diluting filtrate to 100 mOsm and salting the medulla.',
+    details: (
+      <>
+        <div className="space-y-2">
+          <div className="text-xs uppercase tracking-wider text-slate-400">
+            Filtrate flow
+          </div>
+          <FlowRow
+            from="54 L/day · 300 mOsm"
+            to="18 L/day · 100 mOsm (dilute)"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 gap-2">
+          <div className="rounded-lg border border-navy-700 bg-navy-900 p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <span aria-hidden>💧</span>
+              <Pill>Descending limb</Pill>
+            </div>
+            <div className="text-xs text-slate-300">
+              Permeable to <span className="text-white font-medium">water only</span>.
+              Water exits by osmosis into the increasingly salty medulla; filtrate
+              concentrates as it descends.
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-navy-700 bg-navy-900 p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <span aria-hidden>🚫</span>
+              <Pill color={AMBER}>Ascending limb</Pill>
+            </div>
+            <div className="text-xs text-slate-300">
+              <span className="text-white font-medium">Impermeable to water</span>.
+              Actively pumps{' '}
+              <span className="font-semibold" style={{ color: AMBER }}>
+                Na⁺, Cl⁻, K⁺
+              </span>{' '}
+              out into the medulla → filtrate dilutes; medullary interstitium
+              gets saltier.
+            </div>
+          </div>
+        </div>
+
+        <Callout title="Unusual urea handling">
+          Urea is <span className="font-semibold" style={{ color: AMBER }}>secreted</span>{' '}
+          INTO the ascending limb from the medullary interstitium — one of the
+          few places urea moves that direction.
+        </Callout>
+      </>
+    ),
+  },
 };
 
 function Segment({ id, active, onSelect, children }) {
@@ -351,13 +667,43 @@ export default function App() {
               </h3>
               {activeLabel ? (
                 <>
-                  <p className="text-xl font-semibold mb-1">{activeLabel}</p>
-                  <p className="text-xs text-slate-400 mb-4">
-                    {SEGMENTS[active].kind === 'vascular' ? 'Vascular side' : 'Tubular side'}
-                  </p>
-                  <div className="rounded-lg border border-navy-700 bg-navy-800/60 p-4 text-sm text-slate-300">
-                    Station info coming soon.
-                  </div>
+                  {(() => {
+                    const stationKey = SEGMENTS[active].station;
+                    const content = stationKey ? STATION_CONTENT[stationKey] : null;
+                    return (
+                      <>
+                        <p className="text-xl font-semibold mb-0.5">
+                          {content ? content.title : activeLabel}
+                        </p>
+                        <p className="text-xs text-slate-400 mb-4">
+                          {content
+                            ? content.subtitle
+                            : SEGMENTS[active].kind === 'vascular'
+                            ? 'Vascular side'
+                            : 'Tubular side'}
+                        </p>
+                        {content ? (
+                          <>
+                            <div
+                              className="rounded-lg p-4 text-sm leading-relaxed"
+                              style={{
+                                border: `1px solid ${BLUE}66`,
+                                backgroundColor: `${BLUE}14`,
+                                color: '#E5EEFB',
+                              }}
+                            >
+                              {content.plain}
+                            </div>
+                            <GoDeeper>{content.details}</GoDeeper>
+                          </>
+                        ) : (
+                          <div className="rounded-lg border border-navy-700 bg-navy-800/60 p-4 text-sm text-slate-300">
+                            Station info coming soon.
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                   <button
                     onClick={() => setActive(null)}
                     className="mt-4 text-xs text-slate-400 hover:text-white underline underline-offset-2"
